@@ -1,72 +1,53 @@
 #!/usr/bin/python3
-"""Implementation of the BaseModel class."""
-from datetime import datetime
+"""Defines the BaseModel class."""
 from uuid import uuid4
+from datetime import datetime
 from models import storage
 
 
 class BaseModel:
-    """A base class for other models, providing common functionality."""
+    """Represents the BaseModel of the HBnB project."""
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize a new instance of BaseModel.
-
+        """Initialize a new BaseModel.
+        
         Args:
-            args: Additional positional arguments (not used).
-            kwargs: Keyword arguments to initialize the object.
-
-        Attributes:
-            id (str): A unique identifier generated using uuid4.
-            created_at (datetime): The creation timestamp.
-            updated_at (datetime): The last update timestamp.
+            *args (any): Unused.
+            **kwargs (dict): Key/value pairs of attributes.
         """
-        self.id = kwargs.get('id', str(uuid4()))
-        self.created_at = kwargs.get('created_at', datetime.now())
-        self.updated_at = kwargs.get('updated_at', self.created_at)
-
+        time_format = "%Y-%m-%dT%H:%M:%S.%f"
+        self.id = str(uuid4())
+        self.created_at = datetime.today()
+        self.updated_at = datetime.today()
+        
         if kwargs:
             for key, value in kwargs.items():
-                if key not in {'id', 'created_at', 'updated_at', '__class__'}:
-                    if key in {'created_at', 'updated_at'}:
-                        value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+                if key in ["created_at", "updated_at"]:
+                    setattr(self, key, datetime.strptime(value, time_format))
+                else:
                     setattr(self, key, value)
-
         else:
             storage.new(self)
 
-    def __str__(self):
-        """
-        Return a string representation of the BaseModel.
-
-        Returns:
-            str: A formatted string containing the class name and object details.
-        """
-        return f"[{type(self).__name__}] ({self.id}) {self.__dict__}"
-
     def save(self):
-        """
-        Update the 'updated_at' attribute and save the object.
-
-        Updates the 'updated_at' attribute with the current datetime
-        and triggers the save operation to persist the object.
-        """
-        self.updated_at = datetime.now()
+        """Update updated_at with the current datetime."""
+        self.updated_at = datetime.today()
         storage.save()
 
     def to_dict(self):
+        """Return the dictionary of the BaseModel instance.
+        
+        Includes the key/value pair __class__ representing
+        the class name of the object.
         """
-        Convert the BaseModel object to a dictionary.
+        result_dict = self.__dict__.copy()
+        result_dict["created_at"] = self.created_at.isoformat()
+        result_dict["updated_at"] = self.updated_at.isoformat()
+        result_dict["__class__"] = self.__class__.__name__
+        return result_dict
 
-        Returns:
-            dict: A dictionary representation of the BaseModel object.
-        """
-        obj_dict = {key: value for key, value in self.__dict__.items()
-                    if key not in {'created_at', 'updated_at'}}
-
-        obj_dict['__class__'] = type(self).__name__
-        obj_dict['created_at'] = self.created_at.isoformat()
-        obj_dict['updated_at'] = self.updated_at.isoformat()
-
-        return obj_dict
+    def __str__(self):
+        """Return the print/str representation of the BaseModel instance."""
+        class_name = self.__class__.__name__
+        return "[{}] ({}) {}".format(class_name, self.id, self.__dict__)
 
